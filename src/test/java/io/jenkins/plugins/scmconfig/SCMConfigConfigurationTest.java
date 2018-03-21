@@ -1,13 +1,14 @@
-package io.jenkins.plugins.sample;
+package io.jenkins.plugins.scmconfig;
 
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
+import io.jenkins.plugins.scmconfig.SCMConfigConfiguration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
-public class SampleConfigurationTest {
+public class SCMConfigConfigurationTest {
 
     @Rule
     public RestartableJenkinsRule rr = new RestartableJenkinsRule();
@@ -24,15 +25,15 @@ public class SampleConfigurationTest {
     @Test
     public void uiAndStorage() {
         rr.then(r -> {
-            assertNull("not set initially", SampleConfiguration.get().getLabel());
+            assertNull("not set initially", SCMConfigConfiguration.get().getLabel());
             HtmlForm config = r.createWebClient().goTo("configure").getFormByName("config");
             HtmlTextInput textbox = config.getInputByName("_.label");
             textbox.setText("hello");
             r.submit(config);
-            assertEquals("global config page let us edit it", "hello", SampleConfiguration.get().getLabel());
+            assertEquals("global config page let us edit it", "hello", SCMConfigConfiguration.get().getLabel());
         });
         rr.then(r -> {
-            assertEquals("still there after restart of Jenkins", "hello", SampleConfiguration.get().getLabel());
+            assertEquals("still there after restart of Jenkins", "hello", SCMConfigConfiguration.get().getLabel());
         });
     }
 
