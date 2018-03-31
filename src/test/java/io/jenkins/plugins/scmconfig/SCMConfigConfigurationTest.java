@@ -1,12 +1,15 @@
 package io.jenkins.plugins.scmconfig;
 
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
-import io.jenkins.plugins.scmconfig.SCMConfigConfiguration;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 
 public class SCMConfigConfigurationTest {
 
@@ -25,16 +28,28 @@ public class SCMConfigConfigurationTest {
     @Test
     public void uiAndStorage() {
         rr.then(r -> {
-            assertNull("not set initially", SCMConfigConfiguration.get().getLabel());
-            HtmlForm config = r.createWebClient().goTo("configure").getFormByName("config");
-            HtmlTextInput textbox = config.getInputByName("_.label");
-            textbox.setText("hello");
+            SCMConfigConfiguration scmConfig = SCMConfigConfiguration.get();
+            assertEquals("not set initially", 0, scmConfig.getSources().size());
+
+            // Interacting with the 'add' button of stapler's repeatableProperty doesn't work well in test suites,
+            // so we add the test ConfigSource manually.
+            ConfigSource testSource = new ConfigSource("initialValue", null);
+            scmConfig.setSources(Arrays.asList(testSource));
+
+            HtmlPage configurePage = r.createWebClient().goTo("configure");
+            HtmlForm config = configurePage.getFormByName("config");
+            HtmlTextInput textbox = config.getInputByName("_.sourceName");
+
+            assertEquals("UI shows stored value", "initialValue", textbox.getText());
+            assertEquals("Source is populated", 1, scmConfig.getSources().size());
+
+            textbox.setText("updatedValue");
             r.submit(config);
-            assertEquals("global config page let us edit it", "hello", SCMConfigConfiguration.get().getLabel());
         });
         rr.then(r -> {
-            assertEquals("still there after restart of Jenkins", "hello", SCMConfigConfiguration.get().getLabel());
+            SCMConfigConfiguration scmConfig = SCMConfigConfiguration.get();
+            assertEquals("source is still there after restart of Jenkins", 1, scmConfig.getSources().size());
+            assertEquals("source values are still there after restart of Jenkins", "updatedValue", scmConfig.getSources().get(0).getSourceName());
         });
     }
-
 }

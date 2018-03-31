@@ -1,50 +1,49 @@
 package io.jenkins.plugins.scmconfig;
 
 import hudson.Extension;
-import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Example of Jenkins global configuration.
+ * Global configuration plugin that manages a list of SCM sources for Jenkins configuration.
  */
 @Extension
 public class SCMConfigConfiguration extends GlobalConfiguration {
 
     /** @return the singleton instance */
-    public static SCMConfigConfiguration get() {
-        return GlobalConfiguration.all().get(SCMConfigConfiguration.class);
+    public static @Nonnull  SCMConfigConfiguration get() {
+        SCMConfigConfiguration instance = GlobalConfiguration.all().get(SCMConfigConfiguration.class);
+        if (instance == null) {
+            throw new IllegalStateException();
+        }
+        return instance;
     }
 
-    private String label;
+    private List<ConfigSource> sources = new ArrayList<>();
 
     public SCMConfigConfiguration() {
         // When Jenkins is restarted, load any saved configuration from disk.
         load();
     }
 
-    /** @return the currently configured label, if any */
-    public String getLabel() {
-        return label;
+    public List<ConfigSource> getSources() {
+        return sources;
     }
 
-    /**
-     * Together with {@link #getLabel}, binds to entry in {@code config.jelly}.
-     * @param label the new value of this field
-     */
-    @DataBoundSetter
-    public void setLabel(String label) {
-        this.label = label;
+    public void setSources(List<ConfigSource> sources) {
+        this.sources = sources;
         save();
     }
 
-    public FormValidation doCheckLabel(@QueryParameter String value) {
-        if (StringUtils.isEmpty(value)) {
-            return FormValidation.warning("Please specify a label.");
-        }
-        return FormValidation.ok();
+    @Override public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+        setSources(Collections.<ConfigSource>emptyList()); // allow last library to be deleted
+        return super.configure(req, json);
     }
 
 }
